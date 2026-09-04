@@ -3,6 +3,7 @@ from main import save_expenses
 seed_expenses = [
     {
         "id": 1,
+        "group": "Study Group",
         "paid_by": "A",
         "amount_paise": 8000,
         "description": "Groceries",
@@ -12,6 +13,7 @@ seed_expenses = [
     },
     {
         "id": 2,
+        "group": "Study Group",
         "paid_by": "B",
         "amount_paise": 8000,
         "description": "Internet",
@@ -21,6 +23,7 @@ seed_expenses = [
     },
     {
         "id": 3,
+        "group": "Study Group",
         "paid_by": "A",
         "amount_paise": 4000,
         "description": "Snacks",
@@ -30,6 +33,7 @@ seed_expenses = [
     },
     {
         "id": 4,
+        "group": "Study Group",
         "paid_by": "B",
         "amount_paise": 2000,
         "description": "Cleaning supplies",
@@ -39,6 +43,7 @@ seed_expenses = [
     },
     {
         "id": 5,
+        "group": "Flat 302",
         "paid_by": "Aditi",
         "amount_paise": 900000,
         "description": "September rent",
@@ -48,6 +53,7 @@ seed_expenses = [
     },
     {
         "id": 6,
+        "group": "Flat 302",
         "paid_by": "Arya",
         "amount_paise": 10000,
         "description": "Pizza",
@@ -57,6 +63,7 @@ seed_expenses = [
     },
     {
         "id": 7,
+        "group": "Flat 302",
         "paid_by": "Shravya",
         "amount_paise": 9999,
         "description": "Groceries",
@@ -66,6 +73,7 @@ seed_expenses = [
     },
     {
         "id": 8,
+        "group": "Flat 302",
         "paid_by": "Reem",
         "amount_paise": 9999,
         "description": "Movie tickets",
