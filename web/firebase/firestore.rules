@@ -1,0 +1,104 @@
+rules_version = '2';
+
+// FairShare security rules.
+//
+// Paste this into Firebase console -> Firestore Database -> Rules -> Publish.
+//
+// These rules are the only thing standing between one account's expenses and
+// another's: the config values in the browser bundle are public by design, so
+// nothing here may rely on the client behaving well. Everything is denied
+// unless a rule below allows it.
+//
+// Money is stored as whole paise (an integer), never a float, for the same
+// reason the rest of the project does it: 0.1 + 0.2 != 0.3, and a balance that
+// never quite reaches zero is a real bug in a money app.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function myUid() {
+      return request.auth.uid;
+    }
+
+    // Membership of the group a document points at. `resource` here is the
+    // server's view, so this works even for someone who cannot read the group.
+    //
+    // This get() costs one of the ten document access calls Firestore allows
+    // per REQUEST - and a query is one request however many documents come
+    // back. That is why the app asks for one group's expenses at a time: every
+    // document in such a query resolves to the same group, so the fetch is
+    // repeated on one path rather than spread across ten different ones.
+    function inGroup(groupId) {
+      return signedIn()
+        && myUid() in get(/databases/$(database)/documents/groups/$(groupId)).data.memberUids;
+    }
+
+    match /groups/{groupId} {
+      allow read: if signedIn() && myUid() in resource.data.memberUids;
+
+      // you may only create a group you own and are a member of
+      allow create: if signedIn()
+        && request.resource.data.ownerId == myUid()
+        && request.resource.data.memberUids == [myUid()]
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.members is list;
+
+      // members of the group may edit it, but never hand it to someone else
+      allow update: if signedIn()
+        && myUid() in resource.data.memberUids
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.joinCode == resource.data.joinCode
+        // you can add or remove yourself, never anybody else
+        && request.resource.data.memberUids.removeAll(resource.data.memberUids).hasOnly([myUid()])
+        && resource.data.memberUids.removeAll(request.resource.data.memberUids).hasOnly([myUid()]);
+
+      // joining with a code: the only change allowed is adding your own uid
+      allow update: if signedIn()
+        && !(myUid() in resource.data.memberUids)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids'])
+        && request.resource.data.memberUids.hasAll(resource.data.memberUids)
+        && request.resource.data.memberUids.removeAll(resource.data.memberUids) == [myUid()];
+
+      allow delete: if signedIn() && resource.data.ownerId == myUid();
+    }
+
+    // a code maps to a group id and nothing else, so it gives away no data
+    match /joinCodes/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['groupId'])
+        && get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.ownerId == myUid();
+      allow update, delete: if false;
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if inGroup(resource.data.groupId);
+
+      allow create: if inGroup(request.resource.data.groupId)
+        && request.resource.data.createdBy == myUid()
+        && request.resource.data.amountPaise is int
+        && request.resource.data.amountPaise > 0
+        && request.resource.data.description is string
+        && request.resource.data.description.size() > 0
+        && request.resource.data.splitMode in ['equal', 'shares', 'percentage', 'exact'];
+
+      // an expense cannot be moved into a group you are not in
+      allow update: if inGroup(resource.data.groupId)
+        && inGroup(request.resource.data.groupId)
+        && request.resource.data.amountPaise is int
+        && request.resource.data.amountPaise > 0;
+
+      allow delete: if inGroup(resource.data.groupId);
+    }
+
+    // anything not named above stays closed
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Node / Vite
+node_modules/
+dist/
+
+# Local secrets — never commit Supabase keys
+.env
+.env.local
+
+# macOS
+.DS_Store

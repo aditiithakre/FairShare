@@ -63,6 +63,34 @@ def parse_rupees(text):
 
     return int(rupees or 0) * 100 + int(paise.ljust(2, "0") or 0)
 
+#Record builders - shared by the menu and the web UI so the record shape lives in one place
+def create_expense(expenses, group, payer, amount, description, category, split):
+    expense = {
+        "id": next_id(expenses),
+        "group": group,
+        "paid_by": payer,
+        "amount_paise": amount,
+        "description": description,
+        "category": category,
+        "date": date.today().isoformat(),
+        "split": split,
+    }
+    expenses.append(expense)
+    save_expenses(expenses)
+    return expense
+
+def create_settlement(expenses, group, payer, payee, amount):
+    #a settlement is just an expense where one person receives the whole benefit
+    return create_expense(
+        expenses,
+        group,
+        payer,
+        amount,
+        f"Settlement payment from {payer} to {payee}",
+        "Settlement",
+        {"mode": "exact", "people": {payee: amount}},
+    )
+
 
 #Core functions
 def add_expense(expenses, group):
@@ -120,18 +148,7 @@ def add_expense(expenses, group):
         print("Invalid split mode.")
         return
 
-    expense = {
-        "id": next_id(expenses),
-        "group": group,
-        "paid_by": payer,
-        "amount_paise": amount,
-        "description": description,
-        "category": category,
-        "date": date.today().isoformat(),
-        "split": split,
-    }
-    expenses.append(expense)
-    save_expenses(expenses)
+    create_expense(expenses, group, payer, amount, description, category, split)
     print("Expense added successfully.")
 
 def calculate_balances(expenses):
@@ -221,18 +238,7 @@ def record_settlement_payment(expenses, group):
         except ValueError as error:
             print(error)
 
-    settlement_expense = {
-        "id": next_id(expenses),
-        "group": group,
-        "paid_by": payer,
-        "amount_paise": amount,
-        "description": f"Settlement payment from {payer} to {payee}",
-        "category": "Settlement",
-        "date": date.today().isoformat(),
-        "split": {"mode": "exact", "people": {payee: amount}},
-    }
-    expenses.append(settlement_expense)
-    save_expenses(expenses)
+    create_settlement(expenses, group, payer, payee, amount)
     print(f"Recorded settlement payment of {format_paise(amount)} from {payer}.")
 
 def delete_expense(expenses, group):

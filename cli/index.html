@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FairShare</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #fafbfc;
+    --text: #15181d;
+    --muted: #697280;
+    --border: #e4e7ec;
+    --accent: #0f766e;
+    --accent-soft: #e6f4f1;
+    --pos: #047857;
+    --neg: #b42318;
+    --shadow: 0 1px 2px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.06);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1014;
+      --surface: #161920;
+      --surface-2: #1b1f27;
+      --text: #e9ebef;
+      --muted: #98a1ae;
+      --border: #262b34;
+      --accent: #2dd4bf;
+      --accent-soft: #10302d;
+      --pos: #34d399;
+      --neg: #f87171;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 28px 16px 72px; }
+
+  header { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+  .logo {
+    width: 38px; height: 38px; border-radius: 11px; flex: none;
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    font-weight: 700; font-size: 19px;
+  }
+  h1 { font-size: 21px; margin: 0; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 1px; }
+  .spacer { flex: 1 1 auto; }
+
+  select, input, button {
+    font: inherit; color: inherit;
+    border-radius: 9px; border: 1px solid var(--border);
+    background: var(--surface); padding: 9px 11px;
+  }
+  select:focus-visible, input:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+  button { cursor: pointer; transition: filter .15s, background .15s; }
+  button:hover { filter: brightness(.97); }
+  .primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 550; }
+  .ghost { background: transparent; }
+  .tiny { padding: 5px 9px; font-size: 13px; border-radius: 7px; }
+
+  nav { display: flex; gap: 4px; margin-bottom: 18px; background: var(--surface); padding: 4px;
+        border: 1px solid var(--border); border-radius: 11px; box-shadow: var(--shadow); overflow-x: auto; }
+  nav button { border: 0; background: transparent; border-radius: 8px; padding: 8px 14px;
+               color: var(--muted); font-weight: 500; white-space: nowrap; }
+  nav button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); }
+
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px;
+  }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em;
+             color: var(--muted); margin: 0 0 14px; font-weight: 600; }
+
+  .row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .row:last-child { border-bottom: 0; padding-bottom: 0; }
+  .row:first-of-type { padding-top: 0; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%; flex: none; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 13px;
+  }
+  .grow { flex: 1 1 auto; min-width: 0; }
+  .name { font-weight: 550; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .amount { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .pos { color: var(--pos); } .neg { color: var(--neg); }
+
+  .settle { display: flex; align-items: center; gap: 10px; padding: 12px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .arrow { color: var(--muted); }
+
+  .bar { height: 6px; border-radius: 99px; background: var(--accent); min-width: 3px; }
+  .bar-track { flex: 1 1 auto; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+  .field { margin-bottom: 14px; }
+  .field input, .field select { width: 100%; }
+  .two { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; }
+  .modes button { border-radius: 8px; padding: 7px 13px; background: var(--surface-2); }
+  .modes button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .party { display: flex; gap: 8px; margin-bottom: 8px; }
+  .party input { flex: 1 1 auto; min-width: 0; }
+  .party input.val { flex: 0 0 110px; }
+
+  .hint { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .empty { color: var(--muted); text-align: center; padding: 26px 8px; font-size: 14px; }
+  .flash { border-radius: 10px; padding: 11px 13px; margin-bottom: 14px; font-size: 14px; display: none; }
+  .flash.err { display: block; background: #fef3f2; color: var(--neg); border: 1px solid #fecdca; }
+  .flash.ok  { display: block; background: var(--accent-soft); color: var(--accent); border: 1px solid transparent; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .flash.err { background: #2d1513; border-color: #5b2320; }
+  }
+  .hidden { display: none !important; }
+  @media (max-width: 560px) { .two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">₹</div>
+    <div>
+      <h1>FairShare</h1>
+      <div class="sub" id="tagline">Shared expenses, settled fairly</div>
+    </div>
+    <div class="spacer"></div>
+    <select id="groupPicker" aria-label="Group"></select>
+    <button class="ghost" id="newGroup">+ Group</button>
+  </header>
+
+  <nav role="tablist">
+    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button role="tab" data-tab="expenses" aria-selected="false">Expenses</button>
+    <button role="tab" data-tab="add" aria-selected="false">Add expense</button>
+    <button role="tab" data-tab="summary" aria-selected="false">Monthly</button>
+  </nav>
+
+  <div class="flash" id="flash"></div>
+
+  <!-- Overview -->
+  <section id="tab-overview" class="grid">
+    <div class="card">
+      <h2>Balances</h2>
+      <div id="balances"></div>
+    </div>
+    <div class="card">
+      <h2>Settle up</h2>
+      <div id="settlements"></div>
+    </div>
+  </section>
+
+  <!-- Expenses -->
+  <section id="tab-expenses" class="hidden">
+    <div class="card">
+      <h2>All expenses</h2>
+      <div id="expenseList"></div>
+    </div>
+  </section>
+
+  <!-- Add -->
+  <section id="tab-add" class="hidden">
+    <div class="card" style="max-width:640px">
+      <h2>Add an expense</h2>
+      <div class="two">
+        <div class="field"><label for="payer">Paid by</label><input id="payer" list="peopleList" placeholder="Aditi"></div>
+        <div class="field"><label for="amount">Amount</label><input id="amount" placeholder="2216.67" inputmode="decimal"></div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="description">Description</label><input id="description" placeholder="September rent"></div>
+        <div class="field"><label for="category">Category</label><input id="category" list="categoryList" placeholder="Rent"></div>
+      </div>
+      <datalist id="peopleList"></datalist>
+      <datalist id="categoryList">
+        <option>Food</option><option>Rent</option><option>Utilities</option><option>Trips</option><option>Groceries</option>
+      </datalist>
+
+      <div class="field">
+        <label>Split</label>
+        <div class="modes" id="modes">
+          <button type="button" data-mode="equal" aria-pressed="true">Equally</button>
+          <button type="button" data-mode="shares" aria-pressed="false">By shares</button>
+          <button type="button" data-mode="percentage" aria-pressed="false">By percentage</button>
+          <button type="button" data-mode="exact" aria-pressed="false">Exact amounts</button>
+        </div>
+        <div class="hint" id="modeHint">Split evenly between everyone listed.</div>
+      </div>
+
+      <div id="parties"></div>
+      <div style="display:flex;gap:8px;margin:10px 0 16px;flex-wrap:wrap">
+        <button type="button" class="ghost tiny" id="addParty">+ Person</button>
+        <button type="button" class="ghost tiny" id="addEveryone">Add everyone</button>
+      </div>
+
+      <button class="primary" id="saveExpense">Add expense</button>
+    </div>
+  </section>
+
+  <!-- Summary -->
+  <section id="tab-summary" class="hidden">
+    <div class="card">
+      <h2>Monthly spending</h2>
+      <div class="hint" style="margin:-6px 0 14px">Settlements are excluded — repaying a debt isn't spending.</div>
+      <div id="summaries"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let state = { group: "", groups: [], people: [], balances: [], transactions: [], expenses: [], summaries: [] };
+let mode = "equal";
+let parties = [{ name: "", value: "" }];
+
+const initials = (name) => name.trim().slice(0, 2).toUpperCase() || "?";
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function flash(message, kind) {
+  const box = $("flash");
+  box.textContent = message;
+  box.className = "flash " + kind;
+  if (kind === "ok") setTimeout(() => { box.className = "flash"; }, 2600);
+}
+
+async function api(path, options) {
+  const response = await fetch(path, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Something went wrong.");
+  return data;
+}
+
+async function load(group) {
+  state = await api("/api/state?group=" + encodeURIComponent(group || ""));
+  render();
+}
+
+function render() {
+  // group picker
+  $("groupPicker").innerHTML = state.groups.map(
+    (g) => `<option ${g === state.group ? "selected" : ""}>${esc(g)}</option>`
+  ).join("") || `<option>${esc(state.group)}</option>`;
+  $("tagline").textContent = state.expenses.length
+    ? `${state.expenses.length} expense${state.expenses.length === 1 ? "" : "s"} · ${state.people.length} people`
+    : "Shared expenses, settled fairly";
+  $("peopleList").innerHTML = state.people.map((p) => `<option>${esc(p)}</option>`).join("");
+
+  // balances
+  $("balances").innerHTML = state.balances.length ? state.balances.map((b) => {
+    const owed = b.amount.paise > 0, settled = b.amount.paise === 0;
+    return `<div class="row">
+      <div class="avatar">${esc(initials(b.person))}</div>
+      <div class="grow">
+        <div class="name">${esc(b.person)}</div>
+        <div class="meta">${settled ? "all square" : owed ? "is owed" : "owes"}</div>
+      </div>
+      <div class="amount ${settled ? "" : owed ? "pos" : "neg"}">${esc(b.amount.text)}</div>
+    </div>`;
+  }).join("") : `<div class="empty">No expenses in this group yet.</div>`;
+
+  // settle up
+  $("settlements").innerHTML = state.transactions.length ? state.transactions.map((t, i) => `
+    <div class="settle">
+      <div class="avatar">${esc(initials(t.from))}</div>
+      <div class="grow">
+        <span class="name">${esc(t.from)}</span>
+        <span class="arrow">→</span>
+        <span class="name">${esc(t.to)}</span>
+      </div>
+      <div class="amount">${esc(t.amount.text)}</div>
+      <button class="tiny primary" data-settle="${i}">Record</button>
+    </div>`).join("")
+    : `<div class="empty">Everyone is settled up. 🎉</div>`;
+
+  // expenses
+  $("expenseList").innerHTML = state.expenses.length ? state.expenses.map((e) => `
+    <div class="row">
+      <div class="avatar">${esc(initials(e.paid_by))}</div>
+      <div class="grow">
+        <div class="name">${esc(e.description)}</div>
+        <div class="meta">${esc(e.date)} · ${esc(e.category)} · paid by ${esc(e.paid_by)} · split ${esc(e.mode)} between ${e.people.length}</div>
+      </div>
+      <div class="amount">${esc(e.amount.text)}</div>
+      <button class="tiny ghost" data-delete="${e.id}" title="Delete">✕</button>
+    </div>`).join("") : `<div class="empty">Nothing here yet — add your first expense.</div>`;
+
+  // monthly
+  $("summaries").innerHTML = state.summaries.length ? state.summaries.map((s) => {
+    const max = Math.max(...s.categories.map((c) => c.amount.paise), 1);
+    return `<div style="margin-bottom:22px">
+      <div class="row" style="border:0;padding-bottom:8px">
+        <div class="grow"><span class="name">${esc(s.month)}</span></div>
+        <div class="amount">${esc(s.total.text)}</div>
+      </div>
+      ${s.categories.map((c) => `
+        <div class="row" style="border:0;padding:6px 0;gap:10px">
+          <div style="flex:0 0 96px" class="meta">${esc(c.name)}</div>
+          <div class="bar-track"><div class="bar" style="width:${(c.amount.paise / max) * 100}%"></div></div>
+          <div class="amount" style="font-size:13px">${esc(c.amount.text)}</div>
+        </div>`).join("")}
+    </div>`;
+  }).join("") : `<div class="empty">No spending recorded yet.</div>`;
+
+  renderParties();
+}
+
+function renderParties() {
+  const showValue = mode !== "equal";
+  const placeholder = { shares: "2", percentage: "50", exact: "70.00" }[mode] || "";
+  $("parties").innerHTML = parties.map((p, i) => `
+    <div class="party">
+      <input list="peopleList" placeholder="Name" value="${esc(p.name)}" data-party="${i}">
+      <input class="val ${showValue ? "" : "hidden"}" placeholder="${placeholder}" value="${esc(p.value)}" data-value="${i}" inputmode="decimal">
+      <button type="button" class="ghost tiny" data-remove="${i}">✕</button>
+    </div>`).join("");
+  $("modeHint").textContent = {
+    equal: "Split evenly between everyone listed. Any leftover paise goes to the payer.",
+    shares: "Weights, not money — 2 and 1 means twice as much for the first person.",
+    percentage: "Whole numbers that add up to 100.",
+    exact: "Rupee amounts that add up to the total.",
+  }[mode];
+}
+
+// ---- events
+const TABS = ["overview", "expenses", "add", "summary"];
+function showTab(name) {
+  if (!TABS.includes(name)) name = "overview";
+  document.querySelectorAll("nav button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === name));
+  TABS.forEach((tab) => $("tab-" + tab).classList.toggle("hidden", tab !== name));
+}
+document.querySelectorAll("nav button").forEach((button) => {
+  button.onclick = () => { location.hash = button.dataset.tab; showTab(button.dataset.tab); };
+});
+window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+showTab(location.hash.slice(1));
+
+$("modes").onclick = (event) => {
+  const button = event.target.closest("button[data-mode]");
+  if (!button) return;
+  mode = button.dataset.mode;
+  document.querySelectorAll("#modes button").forEach((b) => b.setAttribute("aria-pressed", b === button));
+  renderParties();
+};
+
+$("parties").oninput = (event) => {
+  const nameIndex = event.target.dataset.party, valueIndex = event.target.dataset.value;
+  if (nameIndex !== undefined) parties[nameIndex].name = event.target.value;
+  if (valueIndex !== undefined) parties[valueIndex].value = event.target.value;
+};
+$("parties").onclick = (event) => {
+  const button = event.target.closest("button[data-remove]");
+  if (!button) return;
+  parties.splice(button.dataset.remove, 1);
+  if (!parties.length) parties = [{ name: "", value: "" }];
+  renderParties();
+};
+$("addParty").onclick = () => { parties.push({ name: "", value: "" }); renderParties(); };
+$("addEveryone").onclick = () => {
+  const known = parties.map((p) => p.name.trim()).filter(Boolean);
+  state.people.forEach((person) => { if (!known.includes(person)) parties.push({ name: person, value: "" }); });
+  parties = parties.filter((p) => p.name.trim());
+  if (!parties.length) parties = [{ name: "", value: "" }];
+  renderParties();
+};
+
+$("groupPicker").onchange = (event) => load(event.target.value);
+$("newGroup").onclick = () => {
+  const name = prompt("Name the new group (capitalisation matters):");
+  if (name && name.trim()) { state.group = name.trim(); state.groups = [...state.groups, name.trim()]; render(); }
+};
+
+$("saveExpense").onclick = async () => {
+  const payload = {
+    group: state.group,
+    payer: $("payer").value,
+    amount: $("amount").value,
+    description: $("description").value,
+    category: $("category").value,
+    mode,
+    people: parties.map((p) => p.name),
+    entries: parties.map((p) => ({ name: p.name, value: p.value })),
+  };
+  try {
+    state = await api("/api/expense", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    });
+    ["payer", "amount", "description", "category"].forEach((id) => ($(id).value = ""));
+    parties = [{ name: "", value: "" }];
+    render();
+    flash("Expense added.", "ok");
+  } catch (error) { flash(error.message, "err"); }
+};
+
+document.body.addEventListener("click", async (event) => {
+  const settle = event.target.closest("button[data-settle]");
+  const remove = event.target.closest("button[data-delete]");
+
+  if (settle) {
+    const t = state.transactions[settle.dataset.settle];
+    if (!confirm(`Record ${t.from} paying ${t.to} ${t.amount.text}?`)) return;
+    try {
+      state = await api("/api/settlement", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ group: state.group, payer: t.from, payee: t.to, amount_paise: t.amount.paise }),
+      });
+      render();
+      flash("Settlement recorded.", "ok");
+    } catch (error) { flash(error.message, "err"); }
+  }
+
+  if (remove) {
+    if (!confirm("Delete this expense?")) return;
+    try {
+      state = await api("/api/delete", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ group: state.group, id: Number(remove.dataset.delete) }),
+      });
+      render();
+      flash("Expense deleted.", "ok");
+    } catch (error) { flash(error.message, "err"); }
+  }
+});
+
+load("");
+</script>
+</body>
+</html>
